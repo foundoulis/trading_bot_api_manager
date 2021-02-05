@@ -1,6 +1,7 @@
 use futures::{StreamExt};
 use coinbase_pro_rs::{WSFeed, CBError, WS_SANDBOX_URL};
 use coinbase_pro_rs::structs::wsfeed::*;
+use tokio::runtime::Runtime;
 
 pub struct CoinbaseClient {
     url: String,
@@ -49,8 +50,13 @@ async fn _coinbase_ws_test() {
     }).await;
 }
 
-#[tokio::main]
-async fn main() {
-    //_coinbase_test();
-    _coinbase_ws_test().await;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    _coinbase_test();
+
+    let rt  = Runtime::new()?;
+    rt.block_on(async {
+        _coinbase_ws_test().await;
+    });
+
+    Ok(())
 }
