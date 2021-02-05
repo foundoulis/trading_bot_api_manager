@@ -1,4 +1,6 @@
-use reqwest;
+use futures::{StreamExt};
+use coinbase_pro_rs::{WSFeed, CBError, WS_SANDBOX_URL};
+use coinbase_pro_rs::structs::wsfeed::*;
 
 pub struct CoinbaseClient {
     url: String,
@@ -13,16 +15,42 @@ impl CoinbaseClient {
         }
     }
 
-    pub fn ping_api(&self, route: &str) -> reqwest::Result<reqwest::blocking::Response> {
+    fn internal_request(&self, route: &str) -> reqwest::Result<reqwest::blocking::Response> {
         self.cli.get(&format!("{}{}", self.url, route))
             .header("User-Agent", "foundoulis/1.0")
             .send()
     }
+
+    pub fn get_server_time(&self) -> reqwest::Result<reqwest::blocking::Response> {
+        self.internal_request("time")
+    }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn _coinbase_test() {
     let client = CoinbaseClient::new();
-    let resp = client.ping_api("time").unwrap();
+    let resp = client.get_server_time().unwrap();
     println!("{:#?}", resp.text());
-    Ok(())
+}
+
+async fn _coinbase_ws_test() {
+    let stream = WSFeed::new(WS_SANDBOX_URL,
+        &["BTC-USD"], &[ChannelType::Heartbeat]);
+
+    stream
+        .take(10)
+        .for_each(|msg: Result<Message, CBError>| async {
+        match msg.unwrap() {
+            Message::Heartbeat {sequence, last_trade_id, time, ..} => println!("{}: seq:{} id{}",
+                                                                               time, sequence, last_trade_id),
+            Message::Error {message} => println!("Error: {}", message),
+            Message::InternalError(_) => panic!("internal_error"),
+            other => println!("{:?}", other)
+        }
+    }).await;
+}
+
+#[tokio::main]
+async fn main() {
+    //_coinbase_test();
+    _coinbase_ws_test().await;
 }
