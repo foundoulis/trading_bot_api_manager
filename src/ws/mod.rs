@@ -9,7 +9,7 @@ pub async fn connect_and_print(product_ids: &[&str]) {
     let markets = Arc::new(Mutex::new(Markets::new()));
     let stream = WSFeed::new(WS_URL, product_ids, &[ChannelType::Level2, ChannelType::Ticker]);
     stream
-        //.take(100)
+        .take(100)
         .for_each_concurrent(None, |msg: Result<Message, CBError>| async {
         match msg.unwrap() {
             Message::Heartbeat {sequence, last_trade_id, time, ..} => println!("{}: seq: {} id: {}",

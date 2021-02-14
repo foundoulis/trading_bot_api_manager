@@ -53,7 +53,7 @@ impl std::fmt::Display for OrderBook {
         for (price, volume) in self.bids.iter().rev().take(5).rev() {
             writeln!(f, "BID: {:.2}-{:.1}", price.0, volume)?;
         }
-        writeln!(f, "Last price: {}", self.last_price.unwrap_or(-1.0))?;
+        writeln!(f, "Last {}", self.last_price.unwrap_or(-1.0))?;
         for (price, volume) in self.asks.iter().take(5) {
             writeln!(f, "ASK: {:.2}-{:.1}", price.0, volume)?;
         }
